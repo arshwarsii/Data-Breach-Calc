@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Breach Impact Calculator</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #3a7bd5;
+            --secondary-color: #00d2ff;
+            --dark-color: #2c3e50;
+            --light-color: #f8f9fa;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+            --success-color: #2ecc71;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        }
+        
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+        }
+        
+        .form-control {
+            border-radius: 8px;
+            padding: 10px 15px;
+        }
+        
+        .nav-pills .nav-link.active {
+            background-color: var(--primary-color);
+        }
+        
+        .progress-bar {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        }
+        
+        .text-primary {
+            color: var(--primary-color) !important;
+        }
+        
+        #results-section {
+            display: none;
+        }
+        
+        .chat-container {
+            height: 400px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .chat-message {
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            border-radius: 18px;
+            max-width: 80%;
+            position: relative;
+        }
+        
+        .chat-message.bot {
+            background-color: #e9ecef;
+            border-bottom-left-radius: 5px;
+            float: left;
+            clear: both;
+        }
+        
+        .chat-message.user {
+            background-color: var(--primary-color);
+            color: white;
+            border-bottom-right-radius: 5px;
+            float: right;
+            clear: both;
+        }
+        
+        .chat-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            position: absolute;
+            bottom: -10px;
+        }
+        
+        .bot .chat-avatar {
+            background-color: #6c757d;
+            left: -10px;
+        }
+        
+        .user .chat-avatar {
+            background-color: var(--primary-color);
+            right: -10px;
+        }
+        
+        .risk-meter {
+            width: 100%;
+            height: 20px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        
+        .risk-level {
+            height: 100%;
+            transition: width 1s ease-in-out;
+        }
+        
+        .low-risk {
+            background-color: var(--success-color);
+        }
+        
+        .medium-risk {
+            background-color: var(--warning-color);
+        }
+        
+        .high-risk {
+            background-color: var(--danger-color);
+        }
+        
+        .cost-breakdown {
+            position: relative;
+            height: 300px;
+        }
+        
+        .explanation-text {
+            background-color: #f8f9fa;
+            border-left: 4px solid var(--primary-color);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        
+        .recommendation-card {
+            margin-bottom: 15px;
+            transition: transform 0.3s;
+        }
+        
+        .recommendation-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .badge-effectiveness {
+            padding: 5px 10px;
+            border-radius: 20px;
+        }
+        
+        .recommendation-cost {
+            font-weight: bold;
+            color: var(--dark-color);
+        }
+        
+        .clearfix::after {
+            content: "";
+            clear: both;
+            display: table;
+        }
+        
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark mb-4">
+        <div class="container text-center">
+            <a class="navbar-brand mx-auto" href="#">
+                <i class="fas fa-shield-alt me-2"></i>
+                Data Breach Impact Calculator
+            </a>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h2 class="card-title text-center mb-4">Understand the Financial Impact of Data Breaches</h2>
+                        <p class="text-center mb-4">Enter your company details to simulate a data breach scenario and discover the potential financial impact.</p>
+                        
+                        <form id="company-form">
+                            <h4 class="mb-3">Company Profile</h4>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="company-name" class="form-label">Company Name</label>
+                                    <input type="text" class="form-control" id="company-name" placeholder="e.g., Acme Corp" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="industry" class="form-label">Industry</label>
+                                    <select class="form-control" id="industry" required>
+                                        <option value="">Select Industry</option>
+                                        <option value="healthcare">Healthcare</option>
+                                        <option value="financial">Financial Services</option>
+                                        <option value="retail">Retail</option>
+                                        <option value="technology">Technology</option>
+                                        <option value="education">Education</option>
+                                        <option value="manufacturing">Manufacturing</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="company-size" class="form-label">Number of Employees</label>
+                                    <input type="number" class="form-control" id="company-size" placeholder="e.g., 500" min="1" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="annual-revenue" class="form-label">Annual Revenue ($)</label>
+                                    <input type="number" class="form-control" id="annual-revenue" placeholder="e.g., 10000000" min="1" required>
+                                </div>
+                            </div>
+
+                            <h4 class="mb-3 mt-4">Data Breach Scenarios</h4>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="total-records" class="form-label">Total Records Held</label>
+                                    <input type="number" class="form-control" id="total-records" placeholder="e.g., 100000" min="1" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="records-compromised" class="form-label">Records Compromised</label>
+                                    <input type="number" class="form-control" id="records-compromised" placeholder="e.g., 10000" min="1" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="regulatory-region" class="form-label">Primary Regulatory Region</label>
+                                    <select class="form-control" id="regulatory-region" required>
+                                        <option value="">Select Region</option>
+                                        <option value="gdpr">GDPR (EU)</option>
+                                        <option value="us">United States</option>
+                                        <option value="global">Global Operations</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <h4 class="mb-3 mt-4">Security Measures</h4>
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="data-encryption" value="data-encryption">
+                                        <label class="form-check-label" for="data-encryption">Data Encryption</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="incident-response" value="incident-response">
+                                        <label class="form-check-label" for="incident-response">Incident Response Plan</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="cyber-insurance" value="cyber-insurance">
+                                        <label class="form-check-label" for="cyber-insurance">Cyber Insurance</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="text-center mt-4">
+                                <button type="submit" class="btn btn-primary btn-lg px-5">
+                                    <i class="fas fa-calculator me-2"></i>Calculate Breach Impact
+                                </button>
+                            </div>
+                        </form>
+
+                        <div class="explanation-text mt-4">
+                            <h5><i class="fas fa-lightbulb me-2 text-warning"></i>Why This Matters</h5>
+                            <p>Understanding the potential financial and operational impact of a data breach is critical for prioritizing cybersecurity investments. By assessing your company's profile, breach scenarios, and existing security measures, this calculator provides a tailored estimate of costs, helping you make informed decisions to protect your business.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="loading-spinner" id="loading-spinner">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Calculating breach impact...</p>
+                </div>
+                
+                <div id="results-section">
+                    <div class="row">
+                        <div class="col-lg-8">
+                            <div class="card mb-4">
+                                <div class="card-header bg-white">
+                                    <h3 class="card-title">
+                                        <i class="fas fa-exclamation-triangle me-2 text-warning"></i>
+                                        Breach Scenario
+                                    </h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="alert alert-warning">
+                                        <h4 id="breach-description">Customer Data Exposure affecting 10,000 records</h4>
+                                        <p id="breach-severity" class="mb-0">Severity: Moderate</p>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="card mb-3">
+                                                <div class="card-body">
+                                                    <h5 class="card-title">Records Affected</h5>
+                                                    <h2 id="records-affected" class="display-6 text-primary">10,000</h2>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="card mb-3">
+                                                <div class="card-body">
+                                                    <h5 class="card-title">Industry-Specific Impact</h5>
+                                                    <p id="industry-impact" class="mb-0">Customer payment information exposure risk</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card mb-4">
+                                <div class="card-header bg-white">
+                                    <h3 class="card-title">
+                                        <i class="fas fa-dollar-sign me-2 text-danger"></i>
+                                        Financial Impact
+                                    </h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row mb-4">
+                                        <div class="col-12">
+                                            <div class="card bg-danger text-white">
+                                                <div class="card-body text-center">
+                                                    <h4 class="card-title">Total Estimated Cost</h4>
+                                                    <h1 id="total-cost" class="display-4">$2.5M</h1>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row mb-3">
+                                        <div class="col-md-4">
+                                            <div class="card h-100">
+                                                <div class="card-body">
+                                                    <h5 class="card-title">Direct Costs</h5>
+                                                    <h3 id="direct-cost" class="text-primary">$750K</h3>
+                                                    <p class="text-muted small">Cost per record: <span id="cost-per-record">$75.00</span></p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="card h-100">
+                                                <div class="card-body">
+                                                    <h5 class="card-title">Regulatory Fines</h5>
+                                                    <h3 id="regulatory-fines" class="text-primary">$500K</h3>
+                                                    <p class="text-muted small">GDPR rate: <span id="gdpr-rate">2.00%</span></p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="card h-100">
+                                                <div class="card-body">
+                                                    <h5 class="card-title">Revenue Loss</h5>
+ carcassonne                                                    <h3 id="revenue-loss" class="text-primary">$250K</h3>
+                                                    <p class="text-muted small">Churn rate: <span id="churn-rate">2.50%</span></p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="card h-100">
+                                                <div class="card-body">
+                                                    <h5 class="card-title">Reputation Damage</h5>
+                                                    <h3 id="reputation-damage" class="text-primary">$500K</h3>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="card h-100">
+                                                <div class="card-body">
+                                                    <h5 class="card-title">Recovery Cost</h5>
+                                                    <h3 id="recovery-cost" class="text-primary">$500K</h3>
+                                                    <p class="text-muted small">Recovery time: <span id="recovery-time">12 months</span></p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-4">
+                                        <canvas id="cost-chart" width="400" height="200"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card mb-4">
+                                <div class="card-header bg-white">
+                                    <h3 class="card-title">
+                                        <i class="fas fa-shield-alt me-2 text-success"></i>
+                                        Prevention & ROI
+                                    </h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="card bg-success text-white mb-3">
+                                                <div class="card-body text-center">
+                                                    <h4 class="card-title">Estimated Prevention Cost</h4>
+                                                    <h2 id="prevention-cost" class="display-6">$150K</h2>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="card bg-primary text-white mb-3">
+                                                <div class="card-body text-center">
+                                                    <h4 class="card-title">Return on Investment</h4>
+                                                    <h2 id="prevention-roi" class="display-6">16.7x investment</h2>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="explanation-text">
+                                        <h5><i class="fas fa-lightbulb me-2 text-warning"></i>What This Means</h5>
+                                        <p>Investing in cybersecurity prevention measures could save your organization significant costs in the long run. For every dollar invested in prevention, you could save multiple dollars in breach-related expenses.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card mb-4">
+                                <div class="card-header bg-white">
+                                    <h3 class="card-title">
+                                        <i class="fas fa-list-check me-2 text-primary"></i>
+                                        Recommended Security Measures
+                                    </h3>
+                                </div>
+                                <div class="card-body">
+                                    <div id="recommendations-container">
+                                        <!-- Recommendations will be added here dynamically -->
+                                    </div>
+                                    
+                                    <div class="text-center mt-4">
+                                        <button id="get-recommendations-btn" class="btn btn-primary">
+                                            <i class="fas fa-clipboard-list me-2"></i>Get Detailed Recommendations
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-4">
+                            <div class="card mb-4 sticky-top" style="top: 20px; z-index: 100;">
+                                <div class="card-header bg-white">
+                                    <h3 class="card-title">
+                                        <i class="fas fa-robot me-2 text-primary"></i>
+                                        AI Assistant
+                                    </h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="chat-container" id="chat-container">
+                                        <div class="chat-message bot clearfix">
+                                            <div class="chat-avatar">
+                                                <i class="fas fa-robot text-white" style="font-size: 14px; margin: 8px;"></i>
+                                            </div>
+                                            Welcome to the Data Breach Impact Calculator! I can help you understand the results and answer any questions about cybersecurity.
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="input-group">
+                                        <input type="text" id="chat-input" class="form-control" placeholder="Ask a question...">
+                                        <button class="btn btn-primary" id="send-message">
+                                            <i class="fas fa-paper-plane"></i>
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="mt-3">
+                                        <p class="text-muted small">Example questions:</p>
+                                        <div class="d-flex flex-wrap gap-2">
+jonerry {
+                                            <button class="btn btn-sm btn-outline-primary example-question">How are regulatory fines calculated?</button>
+                                            <button class="btn btn-sm btn-outline-primary example-question">What's the most effective prevention strategy?</button>
+                                            <button class="btn btn-sm btn-outline-primary example-question">Why is the churn rate important?</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/script.js"></script>
+</body>
+</html>
