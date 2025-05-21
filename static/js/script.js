@@ -51,9 +51,10 @@ function calculateBreachImpact() {
     const companySize = document.getElementById('company-size').value;
     const annualRevenue = document.getElementById('annual-revenue').value;
     const industry = document.getElementById('industry').value;
+    const recordsCompromised = document.getElementById('records-compromised').value;
     
     // Validate inputs
-    if (!companySize || !annualRevenue || !industry) {
+    if (!companySize || !annualRevenue || !industry || !recordsCompromised) {
         alert('Please fill in all fields');
         loadingSpinner.style.display = 'none';
         return;
@@ -63,7 +64,8 @@ function calculateBreachImpact() {
     const data = {
         company_size: companySize,
         annual_revenue: annualRevenue,
-        industry: industry
+        industry: industry,
+        records_compromised: recordsCompromised
     };
     
     // Make API call
@@ -89,7 +91,7 @@ function calculateBreachImpact() {
         createCostChart(data.financial_impact);
         
         // Add initial AI assistant message
-        addBotMessage(`I've analyzed the potential impact of a ${data.breach_scenario.severity} data breach for your ${industry} company. The total estimated cost would be ${data.financial_impact.total_cost}, affecting ${data.breach_scenario.records_affected.toLocaleString()} records. How can I help you understand these results?`);
+        addBotMessage(`I've analyzed the potential impact of a ${data.breach_scenario.severity} data breach for your ${industry} company, with ${recordsCompromised} records compromised. The total estimated cost would be ${data.financial_impact.total_cost}. How can I help you understand these results?`);
         
         // Hide loading spinner and show results
         loadingSpinner.style.display = 'none';
@@ -323,7 +325,7 @@ function sendChatMessage() {
     // Clear input
     chatInput.value = '';
     
-    // Generate AI response based on user message
+    // Generate AI response via backend API
     generateAIResponse(message);
 }
 
@@ -359,51 +361,33 @@ function addBotMessage(message) {
     chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
-// Generate AI response based on predefined answers
+// Generate AI response by calling the backend /chat endpoint
 function generateAIResponse(userMessage) {
-    // Convert user message to lowercase for easier matching
-    const message = userMessage.toLowerCase();
+    // Prepare data for API call
+    const data = {
+        message: userMessage
+    };
     
-    // Define response patterns
-    let response = "";
-    
-    // Check for specific questions
-    if (message.includes("gdpr") || message.includes("regulatory") || message.includes("fines")) {
-        response = "Regulatory fines like GDPR are calculated as a percentage of global annual revenue. For severe breaches, fines can reach up to 4% of annual revenue (or €20M, whichever is higher). The severity level determines the percentage applied.";
-    } 
-    else if (message.includes("churn") || message.includes("revenue loss")) {
-        response = "Customer churn rate represents the percentage of customers who leave after a breach. This directly impacts revenue. In the " + (breachData ? breachData.breach_scenario.severity : "simulated") + " breach scenario, we estimated a churn rate of " + (breachData ? breachData.explanation.churn_rate : "X%") + " based on industry averages and breach severity.";
-    }
-    else if (message.includes("prevention") || message.includes("strategy") || message.includes("protect")) {
-        response = "The most effective prevention strategy combines employee security training with robust technical measures. For your specific industry, " + (breachData ? "investing in " + (breachData.prevention.estimated_prevention_cost) + " toward cybersecurity could yield an ROI of " + breachData.prevention.roi : "investing in cybersecurity provides significant ROI") + " by preventing costlier breaches.";
-    }
-    else if (message.includes("cost per record") || message.includes("record cost")) {
-        response = "Cost per record varies by industry. For " + (breachData ? breachData.explanation.cost_per_record : "$X") + " per compromised record in your industry, which includes notification costs, credit monitoring, legal expenses, and customer service.";
-    }
-    else if (message.includes("reputation") || message.includes("brand damage")) {
-        response = "Reputation damage is calculated based on factors like lost future business, reduced customer trust, and brand devaluation. Though harder to quantify precisely, it often exceeds direct costs and can have long-lasting impacts on company valuation.";
-    }
-    else if (message.includes("recovery") || message.includes("time to recover")) {
-        response = "Recovery time depends on breach severity and company preparedness. For the " + (breachData ? breachData.breach_scenario.severity : "simulated") + " breach scenario, we estimate " + (breachData ? breachData.recovery.estimated_time : "X months") + " to fully recover, including investigation, remediation, and rebuilding customer trust.";
-    }
-    else if (message.includes("roi") || message.includes("return on investment")) {
-        response = "The cybersecurity ROI is calculated by dividing the potential breach costs by the prevention investment. For your scenario, every $1 invested in prevention could save " + (breachData ? breachData.prevention.roi.replace("x investment", "") : "several dollars") + " in breach-related expenses.";
-    }
-    else if (message.includes("industry") || message.includes("sector")) {
-        const industry = breachData ? document.getElementById('industry').value : "your industry";
-        response = `${capitalizeFirstLetter(industry)} organizations face unique cybersecurity challenges. They typically have ${industrySpecificInfo(industry)} This affects both the likelihood of breaches and the cost per record.`;
-    }
-    else if (message.includes("hello") || message.includes("hi ") || message === "hi") {
-        response = "Hello! I'm your cybersecurity assistant. I can help explain the breach impact calculation, prevention strategies, or specific aspects of the financial impact. What would you like to know?";
-    }
-    else {
-        response = "Thanks for your question. To better assist you with understanding data breach impacts, could you ask about specific aspects like regulatory fines, prevention strategies, recovery time, or ROI calculations? I'm here to help explain any part of the simulation.";
-    }
-    
-    // Add bot's response with a slight delay to seem more natural
-    setTimeout(() => {
-        addBotMessage(response);
-    }, 600);
+    // Make API call to backend
+    fetch('/chat', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            addBotMessage(`Error: ${data.error}`);
+        } else {
+            addBotMessage(data.response);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        addBotMessage('Sorry, an error occurred while processing your message. Please try again.');
+    });
 }
 
 // Helper functions
