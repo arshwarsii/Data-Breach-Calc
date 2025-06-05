@@ -33,7 +33,7 @@ CUSTOMER_CHURN_RATES = {
 }
 
 # OpenRouter API configuration
-OPENROUTER_API_KEY = "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"
+OPENROUTER_API_KEY = "OpenRouter API"
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 def generate_breach_scenario(company_size, annual_revenue, records_compromised, industry):
